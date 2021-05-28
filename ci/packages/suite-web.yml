@@ -110,6 +110,8 @@ suite-web deploy dev:
   stage: integration testing
   needs:
     - suite-web deploy dev
+  retry:
+    max: 2
   variables:
     COMPOSE_PROJECT_NAME: $CI_JOB_ID
     COMPOSE_FILE: ./docker/docker-compose.suite-ci.yml
