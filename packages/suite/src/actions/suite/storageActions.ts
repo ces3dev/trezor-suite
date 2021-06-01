@@ -12,6 +12,7 @@ import type { GraphData } from '@wallet-types/graph';
 import type { Discovery } from '@wallet-reducers/discoveryReducer';
 import type { FormState } from '@wallet-types/sendForm';
 import type { Trade, TradeType } from '@wallet-types/coinmarketCommonTypes';
+import { FormDraft } from '@wallet-types/formDraft';
 
 export type StorageAction =
     | { type: typeof STORAGE.LOAD }
@@ -324,6 +325,16 @@ export const removeDatabase = () => async (dispatch: Dispatch, getState: GetStat
     );
 };
 
+export const saveFormDraft = async (key: string, draft: FormDraft) => {
+    if (!(await isDBAccessible())) return;
+    return db.addItem('formDrafts', draft, key, true);
+};
+
+export const removeFormDraft = async (key: string) => {
+    if (!(await isDBAccessible())) return;
+    return db.removeItemByPK('formDrafts', key);
+};
+
 export const loadSuiteSettings = async () => {
     if (!(await isDBAccessible())) return;
     return db.getItemByPK('suiteSettings', 'suite');
@@ -372,6 +383,12 @@ export const loadStorage = () => async (dispatch: Dispatch, getState: GetState) 
             drafts[item.key] = item.value;
         });
 
+        const dbFormDrafts = await db.getItemsWithKeys('formDrafts');
+        const stateFormDrafts: AppState['wallet']['formDrafts'] = {};
+        dbFormDrafts.forEach(item => {
+            stateFormDrafts[item.key] = item.value;
+        });
+
         dispatch({
             type: STORAGE.LOADED,
             payload: {
@@ -418,6 +435,10 @@ export const loadStorage = () => async (dispatch: Dispatch, getState: GetState) 
                     send: {
                         ...initialState.wallet.send,
                         drafts,
+                    },
+                    formDrafts: {
+                        ...initialState.wallet.formDrafts,
+                        ...stateFormDrafts,
                     },
                 },
                 analytics: { ...initialState.analytics, ...analytics },
